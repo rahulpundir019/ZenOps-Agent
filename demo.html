@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenOps | Live Demo</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #e6edf3;
+            --text-dim: #8b949e;
+            --accent-orange: #ff8c00;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --border-color: #30363d;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 20px 40px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            background: rgba(63, 185, 80, 0.1);
+            color: var(--accent-green);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid var(--accent-green);
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .metric {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        #console {
+            background: #000;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Cascadia Code', 'Courier New', monospace;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+        }
+
+        .log-entry {
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .agent-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 10px;
+            text-transform: uppercase;
+        }
+
+        .tag-detection { background: var(--accent-blue); color: #000; }
+        .tag-diagnosis { background: #bc8cff; color: #000; }
+        .tag-remediation { background: var(--accent-green); color: #000; }
+        .tag-tool { background: #6e7681; color: #fff; }
+
+        .message {
+            margin-left: 10px;
+            line-height: 1.6;
+            color: #d1d5db;
+        }
+
+        .highlight {
+            color: var(--accent-orange);
+            font-weight: bold;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.8; }
+        button:disabled { background: #30363d; cursor: not-allowed; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">🌐 ZenOps</div>
+        <div class="status-badge">● SYSTEM ONLINE | GCP-PROD-01</div>
+    </header>
+
+    <main>
+        <div class="sidebar">
+            <div class="card">
+                <div class="card-title">Network Health</div>
+                <div class="metric" id="health-metric">100%</div>
+                <div class="metric-label">Availability across regions</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Active Alerts</div>
+                <div class="metric" id="alert-metric">0</div>
+                <div class="metric-label">Critical notifications</div>
+            </div>
+            <div class="card">
+                <div class="card-title">MTTR Target</div>
+                <div class="metric">&lt; 2m</div>
+                <div class="metric-label">Mean Time to Resolution</div>
+            </div>
+        </div>
+
+        <div id="console">
+            <div class="log-entry">
+                <span class="agent-tag tag-tool">System</span>
+                <div class="message">Ready for incident analysis. Click "Run Analysis" to start the pipeline.</div>
+            </div>
+            <div class="controls">
+                <button id="start-btn">Run Analysis</button>
+                <button id="reset-btn" class="hidden">Reset Demo</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const pipeline = [
+            { tag: 'tool', name: 'System', msg: 'Initializing 3-Agent Pipeline...', delay: 1000 },
+            { tag: 'tool', name: 'Detection', msg: 'CALLING TOOL: get_recent_alarms()', delay: 1500 },
+            { tag: 'tool', name: 'Detection', msg: 'CALLING TOOL: get_recent_logs()', delay: 1200 },
+            { tag: 'detection', name: 'Detection Agent', msg: 'A significant service incident is currently in progress.<br><br><span class="highlight">Symptom:</span> us-east1 region is unhealthy. Load balancer routing 100% traffic to us-central1.<br><span class="highlight">Observation:</span> checkout-api latency is p99 4200ms (Threshold: 500ms).', delay: 3000 },
+            { tag: 'tool', name: 'Diagnosis', msg: 'Analyzing root cause from detection report...', delay: 2000 },
+            { tag: 'diagnosis', name: 'Diagnosis Agent', msg: 'The root cause is <span class="highlight">resource exhaustion in the payment-gateway service</span>, causing downstream timeouts in the checkout-api, exacerbated by the regional failover.', delay: 3000 },
+            { tag: 'tool', name: 'Remediation', msg: 'Developing prioritized recovery plan...', delay: 2000 },
+            { tag: 'remediation', name: 'Remediation Agent', msg: '<strong>Priority Action Plan:</strong><br>1. <span class="highlight">Scale Up:</span> Increase payment-gateway instances to resolve 95% CPU load.<br>2. <span class="highlight">Regional Check:</span> Emergency audit of us-east1 infrastructure.<br>3. <span class="highlight">Monitor:</span> Verify us-central1 overflow capacity.<br>4. <span class="highlight">Prevent:</span> Implement CPU/Latency alert policies.', delay: 4000 },
+            { tag: 'tool', name: 'System', msg: 'Pipeline Complete. Incident mitigated. MTTR: 14.2 seconds.', delay: 1000 }
+        ];
+
+        const consoleEl = document.getElementById('console');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const healthMetric = document.getElementById('health-metric');
+        const alertMetric = document.getElementById('alert-metric');
+
+        async function runDemo() {
+            startBtn.disabled = true;
+            
+            for (const step of pipeline) {
+                await new Promise(r => setTimeout(r, step.delay));
+                
+                // Update metrics during demo
+                if (step.tag === 'detection') {
+                    healthMetric.innerText = '64%';
+                    healthMetric.style.color = 'var(--accent-orange)';
+                    alertMetric.innerText = '3';
+                    alertMetric.style.color = 'var(--accent-orange)';
+                }
+                if (step.tag === 'remediation') {
+                    healthMetric.innerText = '92%';
+                    healthMetric.style.color = 'var(--accent-green)';
+                }
+
+                const div = document.createElement('div');
+                div.className = 'log-entry';
+                div.innerHTML = `
+                    <span class="agent-tag tag-${step.tag}">${step.name}</span>
+                    <div class="message">${step.msg}</div>
+                `;
+                consoleEl.insertBefore(div, document.querySelector('.controls'));
+                consoleEl.scrollTop = consoleEl.scrollHeight;
+            }
+
+            startBtn.classList.add('hidden');
+            resetBtn.classList.remove('hidden');
+        }
+
+        startBtn.onclick = runDemo;
+        resetBtn.onclick = () => {
+            location.reload();
+        };
+    </script>
+</body>
+</html>
