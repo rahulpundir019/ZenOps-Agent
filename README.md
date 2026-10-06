@@ -1,4 +1,4 @@
-# Network Incident Agent
+# ZenOps: Network Incident Agent
 
 A multi-agent system that detects, diagnoses, and remediates network incidents automatically — built with [Google ADK](https://github.com/google/adk-python), Gemini, and real Google Cloud telemetry.
 
